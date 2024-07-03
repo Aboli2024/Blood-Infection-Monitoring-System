@@ -1,0 +1,136 @@
+#include "Ubidots.h"
+#include <Wire.h>  // This library is already built in to the Arduino IDE
+#include <LiquidCrystal_I2C.h> //This library you can add via Include Library > Manage Library > 
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+#include <Servo.h>
+Servo myservo;  // create servo object to control a servo
+//bollod culture gcoen 2023-24
+/* Input Parameter 
+ color sensor
+ Output Parameter
+ 
+ lcd screen*/
+ 
+const char* UBIDOTS_TOKEN =  "BBUS-AycxofpyiJLEhOpDjzPGL4bDWWQ64k";  // Put your Ubidots TOKEN
+const char* WIFI_SSID = "me"; // Put here your Wi-Fi SSID
+const char* WIFI_PASS = "one23four"; // Put here your Wi-Fi password
+const char* VARIABLE_LABEL_TO_SEND_infected = "infected";
+const char* VARIABLE_LABEL_TO_SEND_non_infected = "non infected";
+const char* VARIABLE_LABEL_TO_SEND_no_sample_present = "no sample present";
+//Ubidots ubidots(UBIDOTS_TOKEN);
+
+// Define the pins for the color sensor
+#define S0 D4
+#define S1 D5
+#define S2 D6
+#define S3 D7
+#define sensorOut D8
+
+  int orange = 0; 
+  int green = 0;
+  int yellow = 0; 
+
+void setup() {
+  myservo.attach(D0);  // attaches the servo on GIO2 to the servo object 
+  Serial.begin(115200);
+  pinMode(S0, OUTPUT);
+  pinMode(S1, OUTPUT);
+  pinMode(S2, OUTPUT);
+  pinMode(S3, OUTPUT);
+  pinMode(sensorOut, INPUT);
+
+  // Setting frequency scaling to 20%
+  digitalWrite(S0,HIGH);
+  digitalWrite(S1,LOW);
+
+//ubidots.wifiConnect(WIFI_SSID, WIFI_PASS);
+//ubidots.setDebug(true); // Optional: set this to true for debugging messages
+
+     lcd.begin();
+     Wire.begin(D2,D1);
+     lcd.backlight(); // Enable or Turn On the backlight 
+     lcd.clear();
+     lcd.setCursor(0,0);
+     lcd.print("BLOOD CULTURE");
+     lcd.setCursor(0,1);
+     lcd.print("SYSTEM GCOEN");
+     delay(5000);
+}
+
+void loop() 
+{
+ // Reading the color
+  digitalWrite(S2, LOW);
+  digitalWrite(S3, LOW);
+  // Reading Red filter
+  float R = pulseIn(sensorOut, LOW);
+  
+  digitalWrite(S2, HIGH);
+  digitalWrite(S3, HIGH);
+  // Reading Blue filter
+  float B = pulseIn(sensorOut, LOW);
+  
+  digitalWrite(S2, LOW);
+  digitalWrite(S3, HIGH);
+  // Reading Green filter
+  float G = pulseIn(sensorOut, LOW);
+  
+  Serial.print("R: ");
+  Serial.print(R);
+  Serial.print(" G: ");
+  Serial.print(G);
+  Serial.print(" B: ");
+  Serial.println(B);
+
+  lcd.setCursor(0,0);
+    lcd.print("R=");
+    lcd.print(R);
+
+    lcd.setCursor(6,0);
+    lcd.print("G=");
+    lcd.print(G);
+
+    lcd.setCursor(11,0);
+    lcd.print("B=");
+    lcd.print(B);
+    lcd.backlight(); // Enable or Turn On the backlight
+    lcd.clear();
+    
+if ((R>104 && R<131) && (G>106 && G<135) && (B>153 && B<183) )
+   { Serial.println(" - (INFECTED)");
+     lcd.setCursor(0,0);
+     lcd.print("SAMPLE=");
+     lcd.setCursor(0,1);
+     lcd.print("INFECTED"); 
+  delay(500);
+   }
+   
+else if((R>44 && R<61) && (G>46 && G<67) && (B>70 && B<100) )
+   { Serial.println(" - (NON INFECTED)");
+     lcd.setCursor(0,0);
+     lcd.print("SAMPLE=");
+     lcd.setCursor(0,1);
+     lcd.print("NON INFECTED");  
+     delay(500);
+   //  lcd.clear();
+   }
+   else  //((R>21 && R<24) && (G>22 && G<24) && (B>30 && B<34) )
+   { Serial.println(" - (NO SAMPLE)");
+     lcd.setCursor(0,0);
+     lcd.print("SAMPLE=");
+     lcd.setCursor(0,1);
+     lcd.print("NOT PRESENT");  
+     delay(500);
+    // lcd.clear();
+   }
+
+
+  
+/*  bool success = ubidots.send("orange_sorting"); // Sending data to Ubidots
+  if(success){
+    Serial.println("Data sent successfully");
+  } else {
+    Serial.println("Error sending data");
+  }*/
+  delay(500); // Adjust the delay as needed
+}
